@@ -9,7 +9,7 @@ namespace PLATEAU.Editor.EditorWindow.PlateauWindow
         private readonly IEditorDrawable[] tabGUIArray;
 
         private readonly string[] tabImages =
-            { "dark_icon_import.png", "dark_icon_adjust.png", "dark_icon_export.png" };
+            { "dark_icon_import.png", "dark_icon_adjust.png", "dark_icon_export.png", "dark_icon_export.png" };
 
 
         public PlateauWindowGUI(UnityEditor.EditorWindow parentEditorWindow)
@@ -18,7 +18,8 @@ namespace PLATEAU.Editor.EditorWindow.PlateauWindow
             {
                 new CityAddGUI(parentEditorWindow),
                 new CityAdjustGUI(),
-                new CityExportGUI()
+                new CityExportGUI(),
+                new CityPomlExportGUI()
             };
         }
 
