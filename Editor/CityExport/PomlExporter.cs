@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using PLATEAU.CityInfo;
 using PLATEAU.Editor.CityExport.ModelConvert;
 using PLATEAU.MeshWriter;
@@ -78,17 +80,15 @@ namespace PLATEAU.Editor.CityExport
         private static void ExportPomlZip(string destDir, string fileNameWithoutExtension, Model model, PLATEAUInstancedCityModel plateauInstancedCityModel)
         {
             string fileExtension = ".glb";
-            string dirPath = Path.Combine(destDir, fileNameWithoutExtension);
+            string dirPath = Path.Combine(destDir, $"Temp_{fileNameWithoutExtension}");
             Directory.CreateDirectory(dirPath);
+
+            string gltfFilePath = Path.Combine(dirPath, fileNameWithoutExtension + fileExtension);
+            string textureDir = Path.Combine(dirPath, "textures");
 
             using (var gltfWriter = new GltfWriter())
             {
-                string gltfFilePath = Path.Combine(dirPath, fileNameWithoutExtension + fileExtension);
-                string textureDir = Path.Combine(dirPath, "textures");
-
                 gltfWriter.Write(gltfFilePath, model, new GltfWriteOptions(GltfFileFormat.GLB, textureDir));
-
-                Debug.Log(plateauInstancedCityModel.GeoReference.CoordinateSystem);
             }
 
             // POMLファイルを出力します。
@@ -96,16 +96,48 @@ namespace PLATEAU.Editor.CityExport
             var geoCoord = geoRef.Unproject(new PlateauVector3d(0, 0, 0));
 
             var poml = $@"<poml>
-    <scene>
-        <model src=""./{fileNameWithoutExtension}{fileExtension}"">
-            <geo-reference latitude=""{geoCoord.Latitude}"" longitude=""{geoCoord.Longitude} ellipsoidal-height=""{geoCoord.Height}"">
-            </geo-reference>
-        </model>
-    </scene>
-</poml>
-";
+  <scene>
+    <model src=""./{fileNameWithoutExtension}{fileExtension}"">
+      <geo-reference latitude=""{geoCoord.Latitude}"" longitude=""{geoCoord.Longitude}"" ellipsoidal-height=""{geoCoord.Height}"">
+      </geo-reference>
+    </model>
+  </scene>
+</poml>";
             string pomlFilePath = Path.Combine(dirPath, fileNameWithoutExtension + ".poml");
             File.WriteAllText(pomlFilePath, poml);
+
+            var pomlZipFilePath = Path.Combine(destDir, fileNameWithoutExtension + ".poml.zip");
+            CreateZip(new List<string>() { pomlFilePath, gltfFilePath }, pomlZipFilePath);
+
+            Directory.Delete(textureDir, true);
+            File.Delete(gltfFilePath);
+            File.Delete(pomlFilePath);
+            Directory.Delete(dirPath, false);
+        }
+
+        private static void CreateZip(List<string> filePathList, string zipFilePath)
+        {
+            using (var zipFileStream = new FileStream(zipFilePath, FileMode.Create))
+            {
+                using (var zipArchive = new ZipArchive(zipFileStream, ZipArchiveMode.Create))
+                {
+                    foreach (string filePath in filePathList)
+                    {
+                        // Add the file to the zip archive.
+                        string fileNameInZip = Path.GetFileName(filePath);
+                        ZipArchiveEntry zipEntry = zipArchive.CreateEntry(fileNameInZip);
+
+                        // Copy the file content to the zip entry.
+                        using (FileStream sourceFileStream = new FileStream(filePath, FileMode.Open))
+                        {
+                            using (Stream zipEntryStream = zipEntry.Open())
+                            {
+                                sourceFileStream.CopyTo(zipEntryStream);
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
