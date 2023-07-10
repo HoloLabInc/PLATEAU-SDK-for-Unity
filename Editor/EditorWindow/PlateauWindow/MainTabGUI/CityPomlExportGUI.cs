@@ -20,8 +20,8 @@ namespace PLATEAU.Editor.EditorWindow.PlateauWindow.MainTabGUI
     {
         private PLATEAUInstancedCityModel exportTarget;
 
-        private MeshFileFormat meshFileFormat = MeshFileFormat.POML;
-        private IPlateauModelExporter exporter = new PomlModelExporter();
+        // private MeshFileFormat meshFileFormat = MeshFileFormat.POML;
+        // private IPlateauModelExporter exporter = new PomlModelExporter();
         /*
         private MeshFileFormat meshFileFormat = MeshFileFormat.OBJ;
 
@@ -34,17 +34,19 @@ namespace PLATEAU.Editor.EditorWindow.PlateauWindow.MainTabGUI
         };
         */
 
-
         private bool exportTextures;
         private bool exportHiddenObject;
-        private MeshExportOptions.MeshTransformType meshTransformType = MeshExportOptions.MeshTransformType.Local;
-        private CoordinateSystem meshAxis = CoordinateSystem.ENU;
-        private static readonly List<CoordinateSystem> meshAxisChoices = ((CoordinateSystem[])Enum.GetValues(typeof(CoordinateSystem))).ToList();
-        private static readonly string[] meshAxisDisplay = meshAxisChoices.Select(axis => axis.ToNaturalLanguage()).ToArray();
+        private readonly MeshExportOptions.MeshTransformType meshTransformType = MeshExportOptions.MeshTransformType.Local;
+        private readonly CoordinateSystem meshAxis = CoordinateSystem.WUN;
+
+        // private static readonly List<CoordinateSystem> meshAxisChoices = ((CoordinateSystem[])Enum.GetValues(typeof(CoordinateSystem))).ToList();
+        // private static readonly string[] meshAxisDisplay = meshAxisChoices.Select(axis => axis.ToNaturalLanguage()).ToArray();
+
         private string exportDirPath = "";
         private bool foldOutOption = true;
         private bool foldOutExportPath = true;
         private PathSelectorFolder exportDirSelector = new PathSelectorFolder();
+
         public void Draw()
         {
             PlateauEditorStyle.SubTitle("モデルデータのPOMLエクスポートを行います。");
@@ -73,11 +75,12 @@ namespace PLATEAU.Editor.EditorWindow.PlateauWindow.MainTabGUI
 
                     this.exportTextures = EditorGUILayout.Toggle("テクスチャ", this.exportTextures);
                     this.exportHiddenObject = EditorGUILayout.Toggle("非アクティブオブジェクトを含める", this.exportHiddenObject);
-                    this.meshTransformType =
-                        (MeshExportOptions.MeshTransformType)EditorGUILayout.EnumPopup("座標変換", this.meshTransformType);
+
+                    // this.meshTransformType =
+                    //     (MeshExportOptions.MeshTransformType)EditorGUILayout.EnumPopup("座標変換", this.meshTransformType);
 
 
-                    this.meshAxis = meshAxisChoices[EditorGUILayout.Popup("座標軸", meshAxisChoices.IndexOf(this.meshAxis), meshAxisDisplay)];
+                    // this.meshAxis = meshAxisChoices[EditorGUILayout.Popup("座標軸", meshAxisChoices.IndexOf(this.meshAxis), meshAxisDisplay)];
                 }
             });
 
@@ -114,8 +117,9 @@ namespace PLATEAU.Editor.EditorWindow.PlateauWindow.MainTabGUI
                 return;
             }
             var meshExportOptions = new MeshExportOptions(this.meshTransformType, this.exportTextures, this.exportHiddenObject,
-                this.meshFileFormat, this.meshAxis, this.exporter);
-            UnityModelExporter.Export(destinationDir, target, meshExportOptions);
+                MeshFileFormat.GLTF, this.meshAxis, null);
+            // UnityModelExporter.Export(destinationDir, target, meshExportOptions);
+            PomlExporter.Export(destinationDir, target, meshExportOptions);
         }
     }
 }
