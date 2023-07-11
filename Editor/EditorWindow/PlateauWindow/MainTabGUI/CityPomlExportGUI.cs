@@ -34,7 +34,7 @@ namespace PLATEAU.Editor.EditorWindow.PlateauWindow.MainTabGUI
         };
         */
 
-        private bool exportTextures;
+        private bool exportTextures = true;
         private bool exportHiddenObject;
         private readonly MeshExportOptions.MeshTransformType meshTransformType = MeshExportOptions.MeshTransformType.Local;
         private readonly CoordinateSystem meshAxis = CoordinateSystem.WUN;

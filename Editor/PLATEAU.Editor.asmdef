@@ -4,7 +4,9 @@
     "references": [
         "Unity.Formats.Fbx.Editor",
         "libplateau",
-        "PLATEAU.Runtime"
+        "PLATEAU.Runtime",
+        "glTFast",
+        "glTFast.Export"
     ],
     "includePlatforms": [
         "Editor"
