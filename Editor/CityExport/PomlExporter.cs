@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using System.Threading;
 using System.Threading.Tasks;
 using GLTFast.Export;
 using PLATEAU.CityInfo;
@@ -15,6 +16,8 @@ namespace PLATEAU.Editor.CityExport
     /// </summary>
     internal static class PomlExporter
     {
+        private static bool exporting = false;
+
         public static void Export(string destDir, PLATEAUInstancedCityModel instancedCityModel, MeshExportOptions options)
         {
             if (instancedCityModel == null)
@@ -29,11 +32,18 @@ namespace PLATEAU.Editor.CityExport
                 return;
             }
 
-            _ = ExportAsync(destDir, instancedCityModel, options);
+            ExportModel(destDir, instancedCityModel, options);
         }
 
-        private static async Task<bool> ExportAsync(string destDir, PLATEAUInstancedCityModel instancedCityModel, MeshExportOptions options)
+        private static bool ExportModel(string destDir, PLATEAUInstancedCityModel instancedCityModel, MeshExportOptions options)
         {
+            if (exporting)
+            {
+                Debug.LogWarning("エクスポート実行中です");
+                return false;
+            }
+
+            exporting = true;
             try
             {
                 // Unityのシーンから情報を読みます。
@@ -52,7 +62,7 @@ namespace PLATEAU.Editor.CityExport
 
                     string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(childName);
                     Debug.Log($"Export started: {fileNameWithoutExtension}");
-                    var result = await ExportPomlZipAsync(destDir, fileNameWithoutExtension, instancedCityModel, childTrans.gameObject);
+                    var result = ExportPomlZip(destDir, fileNameWithoutExtension, instancedCityModel, childTrans.gameObject);
                     if (result == false)
                     {
                         return false;
@@ -68,9 +78,13 @@ namespace PLATEAU.Editor.CityExport
                 Debug.LogException(ex);
                 return false;
             }
+            finally
+            {
+                exporting = false;
+            }
         }
 
-        private static async Task<bool> ExportGlbAsync(string exportPath, GameObject targetGameObject)
+        private static bool ExportGlb(string exportPath, GameObject targetGameObject)
         {
             var exportSettings = new ExportSettings
             {
@@ -85,11 +99,8 @@ namespace PLATEAU.Editor.CityExport
 
             try
             {
-                Debug.Log(exportPath);
-                // Async glTF export
-                bool success = await export.SaveToFileAndDispose(exportPath);
+                var success = AsyncHelpers.RunSync(() => export.SaveToFileAndDispose(exportPath));
 
-                Debug.Log(success);
                 if (!success)
                 {
                     Debug.LogError("Something went wrong exporting a glTF");
@@ -104,7 +115,7 @@ namespace PLATEAU.Editor.CityExport
             }
         }
 
-        private static async Task<bool> ExportPomlZipAsync(string destDir, string fileNameWithoutExtension, PLATEAUInstancedCityModel plateauInstancedCityModel, GameObject targetGameObject)
+        private static bool ExportPomlZip(string destDir, string fileNameWithoutExtension, PLATEAUInstancedCityModel plateauInstancedCityModel, GameObject targetGameObject)
         {
             string dirPath = Path.Combine(destDir, $"Temp_{fileNameWithoutExtension}");
             Directory.CreateDirectory(dirPath);
@@ -112,7 +123,7 @@ namespace PLATEAU.Editor.CityExport
             string fileExtension = ".glb";
             string gltfFilePath = Path.Combine(dirPath, fileNameWithoutExtension + fileExtension);
 
-            var glbResult = await ExportGlbAsync(gltfFilePath, targetGameObject);
+            var glbResult = ExportGlb(gltfFilePath, targetGameObject);
             if (glbResult == false)
             {
                 return false;
